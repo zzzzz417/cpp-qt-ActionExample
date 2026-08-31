@@ -8,7 +8,8 @@ permissions:
   contents: read
 
 env:
-  QT_VERSION: "6.8.3"
+  # Qt 6.9.2+ no longer links the removed AGL framework on macOS 26/Xcode 26.
+  QT_VERSION: "6.9.3"
 
 jobs:
   build:

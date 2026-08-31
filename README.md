@@ -56,7 +56,7 @@ cmake --install build --config Release
 
 `.github/workflows/build.yml` 在向 `main` 或 `master` 分支 push 时执行：
 
-1. 在 Ubuntu、macOS、Windows runner 上安装 Qt 6.8.3，Windows 使用 MinGW-w64 13.1；
+1. 在 Ubuntu、macOS、Windows runner 上安装 Qt 6.9.3，Windows 使用 MinGW-w64 13.1；
 2. 配置并并行编译 Release 版本；
 3. 运行 CTest；
 4. 安装到独立目录并收集运行时依赖；
