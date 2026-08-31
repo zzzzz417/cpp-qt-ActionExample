@@ -1,5 +1,11 @@
 cmake_minimum_required(VERSION 3.21)
 
+# Keep generated bundles runnable on every macOS version supported by Qt 6.9.
+# Callers can still override this cache value on the CMake command line.
+if(APPLE)
+    set(CMAKE_OSX_DEPLOYMENT_TARGET "12.0" CACHE STRING "Minimum supported macOS version")
+endif()
+
 project(ActionExample
     VERSION 1.0.0
     DESCRIPTION "A small cross-platform Qt QAction example"

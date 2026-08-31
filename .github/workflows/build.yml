@@ -24,7 +24,7 @@ jobs:
             artifact: linux-x86_64
           - name: macOS Clang
             os: macos-15
-            artifact: macos
+            artifact: macos-universal
           - name: Windows MinGW
             os: windows-latest
             artifact: windows-x86_64
@@ -57,12 +57,22 @@ jobs:
           g++ --version
           ninja --version
 
-      - name: Configure Linux or macOS
-        if: runner.os != 'Windows'
+      - name: Configure Linux
+        if: runner.os == 'Linux'
         run: >-
           cmake -S . -B build
           -DCMAKE_BUILD_TYPE=Release
           -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/package
+          -DBUILD_TESTING=ON
+
+      - name: Configure macOS universal bundle
+        if: runner.os == 'macOS'
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/package
+          -DCMAKE_OSX_DEPLOYMENT_TARGET=12.0
+          -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
           -DBUILD_TESTING=ON
 
       - name: Configure Windows with MinGW
@@ -83,10 +93,30 @@ jobs:
       - name: Assemble distributable directory
         run: cmake --install build --config Release
 
-      - name: Upload artifact
+      - name: Sign and archive macOS bundle
+        if: runner.os == 'macOS'
+        run: |
+          codesign --force --deep --sign - --timestamp=none package/ActionExample.app
+          codesign --verify --deep --strict --verbose=2 package/ActionExample.app
+          file package/ActionExample.app/Contents/MacOS/ActionExample
+          tar -czf ActionExample-macos-universal.tar.gz -C package ActionExample.app
+
+      # upload-artifact rewrites file modes when a directory is uploaded.
+      # Preserve the macOS executable bits and framework symlinks in a tarball.
+      - name: Upload Linux or Windows artifact
+        if: runner.os != 'macOS'
         uses: actions/upload-artifact@v4
         with:
           name: ActionExample-${{ matrix.artifact }}
           path: package
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload macOS artifact
+        if: runner.os == 'macOS'
+        uses: actions/upload-artifact@v4
+        with:
+          name: ActionExample-${{ matrix.artifact }}
+          path: ActionExample-macos-universal.tar.gz
           if-no-files-found: error
           retention-days: 14

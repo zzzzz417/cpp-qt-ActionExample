@@ -10,6 +10,7 @@
 - Qt 6 优先、Qt 5 兼容的 CMake 配置
 - GitHub Actions 三系统构建矩阵
 - Qt 6.3+ 下由 `cmake --install` 自动收集运行库和平台插件
+- macOS 12+ 的 Apple Silicon / Intel 通用应用包
 
 ## 环境要求
 
@@ -61,6 +62,10 @@ cmake --install build --config Release
 3. 运行 CTest；
 4. 安装到独立目录并收集运行时依赖；
 5. 上传每个平台各自的 `ActionExample-*` 构建产物。
+
+macOS 构建产物中包含 `ActionExample-macos-universal.tar.gz`。下载 GitHub Artifact 的外层 ZIP 后，还需解压这个 tar 包；不要直接上传或复制裸 `.app` 目录，否则可能丢失可执行权限和 Framework 符号链接。
+
+CI 产物使用临时签名，适合测试但没有经过 Apple 公证。如果 Gatekeeper 阻止首次运行，可在 Finder 中右键应用并选择“打开”。正式分发应配置 Apple Developer ID 证书并完成 notarization。
 
 如需切换 Qt 版本，只需修改工作流顶层的 `QT_VERSION`。生产发布通常还应增加代码签名、公证、安装包格式和发布到 Release 等步骤。
 
