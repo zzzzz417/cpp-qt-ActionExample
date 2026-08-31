@@ -24,6 +24,7 @@
 ```bash
 cmake -S . -B build \
   -DCMAKE_BUILD_TYPE=Release \
+  -DCMAKE_INSTALL_PREFIX="$PWD/package" \
   -DCMAKE_PREFIX_PATH=/path/to/Qt/6.x.x/<toolchain> \
   -DBUILD_TESTING=ON
 cmake --build build --config Release --parallel
@@ -46,16 +47,16 @@ open ./build/ActionExample.app
 生成可分发目录：
 
 ```bash
-cmake --install build --config Release --prefix package
+cmake --install build --config Release
 ```
 
-使用 Qt 6.3 或更高版本时，`package` 会包含应用、Qt 动态库和所需平台插件。使用 Qt 5 时仍可正常编译，但发布前需自行运行 `windeployqt`、`macdeployqt` 或对应的 Linux 部署工具。
+安装前缀必须是绝对路径。使用 Qt 6.3 或更高版本时，`package` 会包含应用、Qt 动态库和所需平台插件。使用 Qt 5 时仍可正常编译，但发布前需自行运行 `windeployqt`、`macdeployqt` 或对应的 Linux 部署工具。
 
 ## CI 流水线
 
-`.github/workflows/build.yml` 在 push、pull request 或手动触发时执行：
+`.github/workflows/build.yml` 在向 `main` 或 `master` 分支 push 时执行：
 
-1. 在 Ubuntu、macOS、Windows runner 上安装 Qt 6.8；
+1. 在 Ubuntu、macOS、Windows runner 上安装 Qt 6.8.3，Windows 使用 MinGW-w64 13.1；
 2. 配置并并行编译 Release 版本；
 3. 运行 CTest；
 4. 安装到独立目录并收集运行时依赖；

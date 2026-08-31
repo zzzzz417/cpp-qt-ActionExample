@@ -3,14 +3,12 @@ name: Build
 on:
   push:
     branches: [main, master]
-  pull_request:
-  workflow_dispatch:
 
 permissions:
   contents: read
 
 env:
-  QT_VERSION: "6.8.*"
+  QT_VERSION: "6.8.3"
 
 jobs:
   build:
@@ -26,7 +24,7 @@ jobs:
           - name: macOS Clang
             os: macos-latest
             artifact: macos
-          - name: Windows MSVC
+          - name: Windows MinGW
             os: windows-latest
             artifact: windows-x86_64
 
@@ -35,16 +33,44 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Install Qt
+        if: runner.os != 'Windows'
         uses: jurplel/install-qt-action@v4.3.1
         with:
           version: ${{ env.QT_VERSION }}
           target: desktop
           cache: true
 
-      - name: Configure
+      - name: Install Qt and MinGW
+        if: runner.os == 'Windows'
+        uses: jurplel/install-qt-action@v4.3.1
+        with:
+          version: ${{ env.QT_VERSION }}
+          target: desktop
+          arch: win64_mingw
+          tools: tools_mingw1310,qt.tools.win64_mingw1310
+          cache: true
+
+      - name: Verify MinGW toolchain
+        if: runner.os == 'Windows'
+        run: |
+          g++ --version
+          ninja --version
+
+      - name: Configure Linux or macOS
+        if: runner.os != 'Windows'
         run: >-
           cmake -S . -B build
           -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/package
+          -DBUILD_TESTING=ON
+
+      - name: Configure Windows with MinGW
+        if: runner.os == 'Windows'
+        run: >-
+          cmake -S . -B build
+          -G Ninja
+          -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_INSTALL_PREFIX=${{ github.workspace }}/package
           -DBUILD_TESTING=ON
 
       - name: Build
@@ -54,7 +80,7 @@ jobs:
         run: ctest --test-dir build --build-config Release --output-on-failure
 
       - name: Assemble distributable directory
-        run: cmake --install build --config Release --prefix package
+        run: cmake --install build --config Release
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
