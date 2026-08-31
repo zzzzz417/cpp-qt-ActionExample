@@ -23,7 +23,7 @@ jobs:
             os: ubuntu-latest
             artifact: linux-x86_64
           - name: macOS Clang
-            os: macos-latest
+            os: macos-15
             artifact: macos
           - name: Windows MinGW
             os: windows-latest
