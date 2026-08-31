@@ -1,0 +1,65 @@
+name: Build
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+env:
+  QT_VERSION: "6.8.*"
+
+jobs:
+  build:
+    name: ${{ matrix.name }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: Linux GCC
+            os: ubuntu-latest
+            artifact: linux-x86_64
+          - name: macOS Clang
+            os: macos-latest
+            artifact: macos
+          - name: Windows MSVC
+            os: windows-latest
+            artifact: windows-x86_64
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Install Qt
+        uses: jurplel/install-qt-action@v4.3.1
+        with:
+          version: ${{ env.QT_VERSION }}
+          target: desktop
+          cache: true
+
+      - name: Configure
+        run: >-
+          cmake -S . -B build
+          -DCMAKE_BUILD_TYPE=Release
+          -DBUILD_TESTING=ON
+
+      - name: Build
+        run: cmake --build build --config Release --parallel
+
+      - name: Test
+        run: ctest --test-dir build --build-config Release --output-on-failure
+
+      - name: Assemble distributable directory
+        run: cmake --install build --config Release --prefix package
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: ActionExample-${{ matrix.artifact }}
+          path: package
+          if-no-files-found: error
+          retention-days: 14
